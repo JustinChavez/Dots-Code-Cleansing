@@ -1,12 +1,31 @@
-function [tree, list] = QuestForCoherence(decisiontime_max)
+function [tree, list] = QuestForCoherence()
 % Based on Ben Heasley's 2afc demo and Matt Nassar's helicopter task
 % TDK 9/20/2013
 
 % path to task svn repository (latest version) and local subfunctions
 addpath(genpath(fullfile('..','taskCode','goldLab','TAFCDotsCont')));
 
-% subject ID info
-[dataFileName, taskPhase, id] = gatherTAFCDotsSubInfoQuest('Kyra Quest');
+%Justin: Following is my attempt to try and follow 'good' coding 
+%procedure. Removing to opt for readability instead.
+% try
+%     gatherInfo = load('values/gatherinfo.mat','tag','id','session','foldername');
+%     tag = gatherInfo.tag;
+%     id = gatherInfo.id;
+%     session = gatherInfo.session;
+%     foldername = gatherInfo.foldername;
+% catch ME
+%     if (strcmp(ME.identifier,'MATLAB:nonExistentField'))
+%         msg = 'Variable was not saved to the loaded file. Check ScriptRun.';
+%         causeException = MException('MATLAB:myCode:VariableNotLoaded',msg);
+%         ME = addCause(ME,causeException);
+%     end
+%     rethrow(ME)
+% end
+
+%Justin_TODO: taskPhase and id seemed to be unused. Might want to remove.
+gatherInfo = load('values/gatherinfo.mat');
+[dataFileName, taskPhase, id] = gatherTAFCDotsSubInfoQuest(gatherInfo.tag,...
+    gatherInfo.id, gatherInfo.session, gatherInfo.foldername);
 
 topsDataLog.flushAllData();
 
@@ -15,48 +34,32 @@ disp('--INITIALIZING--');
 time = clock;
 randSeed = time(6)*10e6;
 
-if nargin==0
-    decisiontime_max = Inf;
-end
 
 % load(['./TAFCDotsData/TAFCDots_cg1_main_2Hz1.mat'])
 % randSeed = statusData(1).randSeed;
 % clear statusData;
 
+gatherDotsLogic = load('values/TAFCDotsLogic.mat');
 logic = TAFCDotsLogicQuest(randSeed);
-logic.name = 'TAFC Reaction Time Perceptual Task';
+logic.name = gatherDotsLogic.session_name;
 logic.dataFileName = dataFileName;
 logic.time = time;
 isClient = 0;
 % logic.catchTrialProbability = 0;
-logic.trialsPerBlock=input('Trials Per Block= ');
-logic.adaptor=input('Adapting block? 1=false, 2=true  ');
-logic.coherence = input('coherence guess= ');
-
-
+logic.trialsPerBlock=gatherDotsLogic.TrialsPerBlock;
+logic.adaptor=gatherDotsLogic.Adapting_Block;
+logic.coherence = gatherDotsLogic.Coherence_Guess;
            
+
  %Make Quest Object    
-            pThreshold = 0.65;
-            Guess = logic.coherence;
-            GuessDev = 10;
+Guess = logic.coherence;
+gatherGC = load('values/quest_create.mat');
 
-                % These I don't understand
-            beta = 3.5;
-            delta = 0.01; 
-            gamma = 0.5;
-
-            %Creating object
-            questobj = QuestCreate(Guess, GuessDev, pThreshold, beta, delta, gamma, .5, 50); 
-     logic.questobj=questobj;
+%Creating object
+questobj = QuestCreate(Guess, gatherGC.GuessSD,gatherGC.pThreshold,...
+    gatherGC.beta, gatherGC.delta, gatherGC.gamma, gatherGC.grain, gatherGC.range); 
+logic.questobj=questobj;
             
-            
-
-
-
-
-
-
-% 
 % logic.nBlocks = 1;
 % logic.trialsPerBlock = 1;
 % logic.catchTrialProbability = 0;
@@ -64,8 +67,8 @@ logic.coherence = input('coherence guess= ');
 % logic.coherenceset = 10;
 % logic.minT = 10;
 % logic.maxT = 10;
-
-logic.decisiontime_max = decisiontime_max;
+gatherDT = load('values/DT.mat');
+logic.decisiontime_max = gatherDT.decisiontime_max;
 
 % Experiment paradigm
 [tree, list] = configureTAFCDotsDurQuest(logic, isClient); 

@@ -29,13 +29,11 @@ classdef TAFCDotsLogicQuest < handle
         % running count of good and bad trials in each block
         blockTotalTrials = 0;
 
-            
         % seed for initializing random number generators
         randSeed = 1;
         
         % initial direction
         direction0 = 0;
-        
 
         choice = 0;
         % temporary variables for storing data not currently used in this
@@ -68,8 +66,6 @@ classdef TAFCDotsLogicQuest < handle
         
         keyhistory = [];
         
-        
-
         adaptorCounter=0;
         adaptor=1; %non-adapting trials by default (1 is false, 2 is true)
         
@@ -234,11 +230,7 @@ classdef TAFCDotsLogicQuest < handle
                 %self.score = (mean(self.PercentCorrData))./(mean(self.ReactionTimeData));
                 if self.blockCompletedTrials==self.trialsPerBlock-1
                     self.perrcorr=mean(self.PercentCorrData);
-                end
-                
-                
-                
-                
+                end      
             end
         end
         
