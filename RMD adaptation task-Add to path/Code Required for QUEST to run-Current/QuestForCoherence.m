@@ -5,6 +5,7 @@ function [tree, list] = QuestForCoherence()
 % path to task svn repository (latest version) and local subfunctions
 addpath(genpath(fullfile('..','taskCode','goldLab','TAFCDotsCont')));
 
+
 %Justin: Following is my attempt to try and follow 'good' coding 
 %procedure. Removing to opt for readability instead.
 % try
@@ -76,8 +77,8 @@ logic.decisiontime_max = gatherDT.decisiontime_max;
 %[tree, list] = configureTAFCDots(logic, isClient); % free-response
 
 % Visualize the task's structure
-% tree.gui();
-% list.gui();
+ %tree.gui();
+ %list.gui();
 
 %% Execute the 2afc task by invoking run() on the top-level object
 commandwindow();

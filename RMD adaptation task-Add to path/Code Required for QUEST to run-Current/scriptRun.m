@@ -1,3 +1,6 @@
+addpath(genpath(fullfile('..','..','..','Lab-Matlab-Control','tower-of-psych')));
+addpath(genpath(fullfile('..','..','..','Lab-Matlab-Control','snow-dots')));
+addpath(genpath(fullfile('..','..','..','mgl')));
 %Decision_Time
 decisiontime_max = inf;
 save('values/DT.mat','decisiontime_max')
@@ -28,4 +31,7 @@ grain = .5;
 range = 50;
 save('values/quest_create.mat','pThreshold','GuessSD','beta',...
     'delta','gamma','grain','range')
+
+%run program
+QuestForCoherence()
 
