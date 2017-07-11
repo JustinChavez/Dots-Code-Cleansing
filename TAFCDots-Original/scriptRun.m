@@ -1,6 +1,10 @@
 addpath(genpath(fullfile('..','Lab-Matlab-Control','snow-dots')));
 addpath(genpath(fullfile('..','mgl')));
 
+if ~exist('scriptRunValues','dir')
+    mkdir('scriptRunValues');
+end
+
 %Decision_Time
 decisiontime_max = inf;
 save('scriptRunValues/DT.mat','decisiontime_max')
@@ -25,10 +29,10 @@ practiceN = 0;
 %minT = 1;
 %maxT = 1;
 %coherenceset = [0 0 0]; %Use if we are switching between multiple
-%coherences. Uncomment code in TAFCDotsLogic as well
+%coherences. Uncomment code in TAFCDotsLogic and TAFCDotsMainDemo.m
 
 save('scriptRunValues/logic_values.mat','name','nBlocks', 'trialsPerBlock','H', ...
-    'coherenceset','duration', 'practiceN', 'coherence');
+    'duration', 'practiceN', 'coherence');
 
 %isClient
 isClient = 0;
