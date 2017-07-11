@@ -1,4 +1,4 @@
-function [tree, list] = TAFCDotsMainDemo(decisiontime_max)
+function [tree, list] = TAFCDotsMainDemo()
 % Based on Ben Heasley's 2afc demo and Matt Nassar's helicopter task
 % TDK 9/20/2013
 
@@ -6,7 +6,9 @@ function [tree, list] = TAFCDotsMainDemo(decisiontime_max)
 addpath(genpath(fullfile('..','taskCode','goldLab','TAFCDotsCont')));
 
 % subject ID info
-[dataFileName, taskPhase, id] = gatherTAFCDotsSubInfo('TAFCDotsCont');
+gatherInfo = load('scriptRunValues/gatherinfo.mat');
+[dataFileName, taskPhase, id] = gatherTAFCDotsSubInfo(gatherInfo.tag,...
+    gatherInfo.id, gatherInfo.session, gatherInfo.foldername);
 
 topsDataLog.flushAllData();
 
@@ -19,45 +21,32 @@ if nargin==0
     decisiontime_max = Inf;
 end
 
-% load(['./TAFCDotsData/TAFCDots_cg1_main_2Hz1.mat'])
-% randSeed = statusData(1).randSeed;
-% clear statusData;
+logic_values = load('scriptRunValues/logic_values.mat');
 
 logic = TAFCDotsLogic(randSeed);
-logic.name = 'TAFC Reaction Time Perceptual Task';
+logic.name = logic_values.name;
 logic.dataFileName = dataFileName;
 logic.time = time;
-isClient = 0;
-logic.nBlocks = 1;
-logic.trialsPerBlock = 1;
+logic.nBlocks = logic_values.nBlocks;
+logic.trialsPerBlock = logic_values.trialsPerBlock;
 % logic.catchTrialProbability = 0;
-logic.H = .1;
-logic.coherenceset = 20;
-logic.minT = 10;
-logic.maxT = 10;
-logic.practiceN = 0;
-% 
-% logic.nBlocks = 1;
-% logic.trialsPerBlock = 1;
-% logic.catchTrialProbability = 0;
-% logic.H = 2;
-% logic.coherenceset = 10;
-% logic.minT = 10;
-% logic.maxT = 10;
+logic.H = logic_values.H;
+logic.coherenceset = logic_values.coherenceset;
+logic.coherence = logic_values.coherence;
+%logic.minT = logic_values.minT;
+%logic.maxT = logic_values.maxT;
+logic.duration = logic_values.duration;
+logic.practiceN = logic_values.practiceN;
 
-logic.decisiontime_max = decisiontime_max;
+decisiontime_value = load('scriptRunValues/DT.mat');
+logic.decisiontime_max = decisiontime_value.decisiontime_max;
 
+isClient_value = load('scriptRunValues/isClient.mat');
+isClient = isClient_value.isClient;
 % Experiment paradigm
 [tree, list] = configureTAFCDotsDur(logic, isClient); 
-%[tree, list] = configureTAFCDotsCPDetect(logic, isClient);% interrogation
-%[tree, list] = configureTAFCDots(logic, isClient); % free-response
-
-% Visualize the task's structure
-% tree.gui();
-% list.gui();
 
 %% Execute the 2afc task by invoking run() on the top-level object
 commandwindow();
 tree.run();
-
-%topsDataLog.gui();
+mglClose();
