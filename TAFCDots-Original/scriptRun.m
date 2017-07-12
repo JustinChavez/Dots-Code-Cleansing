@@ -1,4 +1,4 @@
-addpath(genpath(fullfile('..','Lab-Matlab-Control','snow-dots')));
+addpath(genpath(fullfile('..','Lab-Matlab-Control')));
 addpath(genpath(fullfile('..','mgl')));
 
 if ~exist('scriptRunValues','dir')
