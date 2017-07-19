@@ -6,7 +6,6 @@ addpath(genpath(fullfile('..','mgl')));
 if ~exist('scriptRunValues','dir')
     mkdir('scriptRunValues');
 end
-
 %Decision_Time
 decisiontime_max = inf;
 save('scriptRunValues/DT.mat','decisiontime_max')
