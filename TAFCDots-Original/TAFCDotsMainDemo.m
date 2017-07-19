@@ -17,10 +17,6 @@ disp('--INITIALIZING--');
 time = clock;
 randSeed = time(6)*10e6;
 
-if nargin==0
-    decisiontime_max = Inf;
-end
-
 logic_values = load('scriptRunValues/logic_values.mat');
 
 logic = TAFCDotsLogic(randSeed);
@@ -31,7 +27,7 @@ logic.nBlocks = logic_values.nBlocks;
 logic.trialsPerBlock = logic_values.trialsPerBlock;
 % logic.catchTrialProbability = 0;
 logic.H = logic_values.H;
-logic.coherenceset = logic_values.coherenceset;
+%logic.coherenceset = logic_values.coherenceset;
 logic.coherence = logic_values.coherence;
 %logic.minT = logic_values.minT;
 %logic.maxT = logic_values.maxT;

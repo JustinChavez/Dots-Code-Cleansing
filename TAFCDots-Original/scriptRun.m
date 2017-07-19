@@ -1,4 +1,6 @@
-addpath(genpath(fullfile('..','Lab-Matlab-Control','snow-dots')));
+%currently there is no timeout, free-response paradigm
+
+addpath(genpath(fullfile('..','Lab-Matlab-Control')));
 addpath(genpath(fullfile('..','mgl')));
 
 %Decision_Time
@@ -22,15 +24,19 @@ coherence = 100; %Percent of dots moving in stimulus direction
 duration = 1; %length of time dots are shown
 practiceN = 0;
 
+
 %minT = 1;
 %maxT = 1;
 %coherenceset = [0 0 0]; %Use if we are switching between multiple
 %coherences. Uncomment code in TAFCDotsLogic as well
 
 save('scriptRunValues/logic_values.mat','name','nBlocks', 'trialsPerBlock','H', ...
-    'coherenceset','duration', 'practiceN', 'coherence');
+    'duration', 'practiceN', 'coherence');
 
 %isClient
 isClient = 0;
 save('scriptRunValues/isClient.mat','isClient');
+
 TAFCDotsMainDemo()
+
+

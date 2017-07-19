@@ -266,26 +266,33 @@ trial.addChild(screen);
 function [name,data] = getNextEvent_Clean(dt, trialStates, list)
 flag = 1;
 logic = list{'object'}{'logic'};
-while flag
+%start = clock;
+%timeout = logic.decisiontime_max;
+logic.choice = NaN;
+while flag %&& (etime(clock, start) < timeout)
     key_entered = mglGetKeyEvent(dt);
-    if (strcmp(key_entered.charCode,'f'))
-        disp('f recorded');
+    if (isempty(key_entered))
+        logic.choice=0;
+        flag=0;
+    elseif (strcmp(key_entered.charCode,'f'))
         logic.choice = -1; % right
         flag = 0;
         %Place data recording here
     elseif (strcmp(key_entered.charCode,'j'))
-        disp('j recorded');
         logic.choice = +1; % left
         flag = 0;
         %place data recording here
     end
 end
 
+%Justin TODO: Need to figure out what dependency necessitates these
+%existing
 name = NaN;
 data = NaN;
 list{'object'}{'logic'} = logic;
-trialStates.editStateByName('decision','timeout',0);
-disp(key_entered);
+%Justin#4: Thought this was actually doing something. Turns out it has no
+%effect on timeout, function return does
+%trialStates.editStateByName('decision','timeout',0);
 
 function configStartTrial(list)
 % start Logic trial
@@ -365,6 +372,13 @@ save(dataFullFile, 'statusData')
 % only need to wait our the intertrial interval
 pause(list{'timing'}{'intertrial'});
 
+
+%At the end of every decision in the tree, this function records the
+%direction and coherence at every time point (directionvc, coherencevc),
+%records if correct choice was made, and sets color of dot for feedback
+
+%tldr: add or adjust post decision options here
+
 function showFeedback(list)
 logic = list{'object'}{'logic'};
 % hide the fixation point and cursor
@@ -378,8 +392,6 @@ logic.setDetection();
 drawables.setObjectProperty('isVisible', false, [fpInd]);
 drawables.setObjectProperty('isVisible', true, [targsInd]);
 
-%uiMap = list{'input'}{'mapping'};isLeft = ui.getValue(uiMap.left.ID) == -1;
-% isRight = ui.getValue(uiMap.right.ID) == +1;
 if logic.choice == -1 %left choice
     list{'control'}{'current choice'} = 'leftward';
 elseif logic.choice == 1 %right choice
@@ -387,7 +399,8 @@ elseif logic.choice == 1 %right choice
 end
  
 stim = drawables.getObject(stimInd);
- 
+
+
 logic.directionvc = stim.directionvc(1:stim.tind);
 logic.coherencevc = stim.coherencevc(1:stim.tind);
  
@@ -397,6 +410,7 @@ logic.stimstrct = stimstrct;
 disp('works?');
 disp(logic.choice);
 
+%Record accuracy of choice and change color of dot accordingly
 if logic.choice == -1 && stim.direction == 180
     drawables.setObjectProperty( ...
         'colors', list{'graphics'}{'green'}, targsInd);
@@ -405,28 +419,23 @@ elseif logic.choice == 1 && stim.direction == 0
      drawables.setObjectProperty( ...
          'colors', list{'graphics'}{'green'}, targsInd);
      logic.correct = 1;
-elseif logic.choice == 0
+elseif logic.choice == 0 %timeout
      drawables.setObjectProperty( ...
          'colors', list{'graphics'}{'yellow'}, targsInd);
      logic.correct = 0;
- else
+else %wrong choice
      drawables.setObjectProperty( ...
          'colors', list{'graphics'}{'red'}, targsInd);
  logic.correct = 0;
- end
-%  
-% if logic.choice == 0 %timeout
-%      drawables.setObjectProperty( ...
-%          'colors', list{'graphics'}{'yellow'}, targsInd);
-% else
-%      drawables.setObjectProperty( ...
-%          'colors', list{'graphics'}{'green'}, targsInd);
-% end
- 
-% logic.computeBehaviorParameters();
-% if logic.correct == 1
+end
+
+%Computes and records logic.ReactionTimeData and logic.PercentCorrData
+logic.computeBehaviorParameters();
+
+%JUSTIN TODO: Score is calculated below. When should it be utilized?
+%if logic.correct == 1
 %     logic.score = logic.score + 0.1;
-% elseif logic.correct == 0
+%elseif logic.correct == 0
 %     logic.score = logic.score - 0.1;
 %     if logic.score < 0
 %         logic.score = 0;
@@ -436,7 +445,7 @@ elseif logic.choice == 0
 % drawables = list{'graphics'}{'drawables'};
 % drawables.setObjectProperty('string', strcat(num2str(logic.blockTotalTrials + 1), '/',...
 % num2str(logic.trialsPerBlock)), counterInd);
-% rawables.setObjectProperty('string', strcat('$', num2str(logic.score)), scoreInd);
+% drawables.setObjectProperty('string', strcat('$', num2str(logic.score)), scoreInd);
 
 
 
