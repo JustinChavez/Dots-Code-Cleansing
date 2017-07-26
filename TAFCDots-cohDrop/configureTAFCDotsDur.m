@@ -140,7 +140,17 @@ list{'graphics'}{'stimulus index'} = stimInd;
 list{'graphics'}{'counter index'} = counterInd;
 list{'graphics'}{'score index'} = scoreInd;
 list{'graphics'}{'screen'} = screen;
+%% Quest initialization
+quest_values = load('scriptRunValues/quest_values.mat');
+tGuess = quest_values.tGuess; 
+tGuessSd = quest_values.tGuessSd; 
+pThreshold= quest_values.pThreshold;
+beta=quest_values.beta;delta=quest_values.delta;gamma=quest_values.gamma;
+q=QuestCreate(tGuess,tGuessSd,pThreshold,beta,delta,gamma);
+q.normalizePdf=1; % This adds a few ms per call to QuestUpdate, but otherwise the pdf will underflow after about 1000 trials.
 
+list{'quest'}{'number_of_trials'} = quest_values.questTrials;
+list{'quest'}{'object'} = q;
 %% Outline the structure of the experiment with topsRunnable objects
 %   visualize the structure with tree.gui()
 %   run the experiment with tree.run()
@@ -173,21 +183,22 @@ trialCalls = topsCallList('call functions');
 list{'control'}{'trial calls'} = trialCalls;
 
 % "instructions" is a branch of the tree with an instructional slide show
-instructions = topsTreeNode('instructions');
-instructions.iterations = 1;
-tree.addChild(instructions);
 
-viewSlides = topsConcurrentComposite('slide show');
+%instructions = topsTreeNode('instructions');
+%instructions.iterations = 1;
+%tree.addChild(instructions);
+
+%viewSlides = topsConcurrentComposite('slide show');
 %viewSlides.startFevalable = {@flushData, ui};
 %viewSlides.finishFevalable = {@flushData, ui};
-instructions.addChild(viewSlides);
+%instructions.addChild(viewSlides);
 
-instructionStates = topsStateMachine('instruction states');
-viewSlides.addChild(instructionStates);
+%instructionStates = topsStateMachine('instruction states');
+%viewSlides.addChild(instructionStates);
 
-instructionCalls = topsCallList('instruction updates');
-instructionCalls.alwaysRunning = true;
-viewSlides.addChild(instructionCalls);
+%instructionCalls = topsCallList('instruction updates');
+%instructionCalls.alwaysRunning = true;
+%viewSlides.addChild(instructionCalls);
 
 list{'outline'}{'tree'} = tree;
 %% Control:
@@ -202,16 +213,18 @@ list{'outline'}{'tree'} = tree;
 
 %% Organize the presentation of instructions
 % the instructions state machine will respond to user input commands
-% states = { ...
-%     'name'      'next'      'timeout'	'entry'     'input'; ...
-%     'showSlide' ''          logic.decisiontime_max    {}          {@getNextEvent ui}; ...
-%      'rightFine' 'showSlide' 0           {}	{}; ...
-%      'leftFine'  'showSlide' 0           {} {}; ...
-%     'commit'     ''          0           {}          {}; ...
-%     };
-% instructionStates.addMultipleStates(states);
+%states = { ...
+%    'name'      'entry'         'timeout'	'exit'          'next'      'input'; ...
+%    'quest_initialize' {@quest_initialize}              0           {}    'start1'  {};...
+%    'start1'    {@test1}              0           {}    'next1'  {};...
+%    'next1'    {@test2}              0           {}    'end1'  {};...
+%    'end1'    {}              0           {}    ''  {};...
+%    };
+%instructionStates.addMultipleStates(states);
 % instructionStates.startFevalable = {@doMessage, list, ''};
 % instructionStates.finishFevalable = {@doMessage, list, ''};
+%instructionStates.startFevalable = {@configStartTrial, list};
+%instructionStates.finishFevalable = {@configFinishTrial, list};
 % 
 % % the instructions call list runs in parallel with the state machine
 % instructionCalls.addCall({@read, ui}, 'input');
@@ -235,12 +248,15 @@ fixedStates = { ...
     'pause'     {chf fpInd} 0       {}                  'pause2'   {};...
     'pause2'    {cho fpInd}              0           {}    'prepare2'  {};...
     'prepare2'   {on qpInd}      0       {}      'change-time' {}; ...
-    'change-time'      {@editState, trialStates, list, logic}   0    {}    'stimulus1'     {}; ...
-    'stimulus1'  {on stimInd}   0       {} 'stimulus0' {}; ...
+    'change-time'      {@editState, trialStates, list, logic}   0    {}    'stimulus3'     {}; ...
+    %'stimulus1'  {on stimInd}   0       {} 'stimulus0' {}; ...
+    'stimulus3'  {}   0       {} 'stimulus1' {@turn_on_stim list trialStates}; ...
+    'stimulus1'  {@record_stim list trialStates}   0       {} 'stimulus1' {}; ...
 %    'stimulus2'  {@changeDirection, list} 0     {}	'change-time' {}; ...
     'stimulus0'  {}   0    {@setTimeStamp, logic}             'decision'     {}; ...
    % 'stimulus0'  {}   0    {@setTimeStamp, logic}             'decision'     {}; ... 
-    'decision'  {off stimInd}   0  {}  'moved'  {@getNextEvent_Clean logic.decisiontime_max trialStates list}; ...
+    %'decision'  {off stimInd}   0  {}  'moved'  {@getNextEvent_Clean logic.decisiontime_max trialStates list}; ...
+    'decision'  {}   0  {}  'moved'  {@getNextEvent_Clean logic.decisiontime_max trialStates list}; ...
     'moved'    {}         0     {@showFeedback, list} 'choice' {}; ...
     'choice'    {}	tFeed     {}              'complete' {}; ...
     'complete'  {}  0   {}              'counter'          {}; ... % always a good trial for now
@@ -262,6 +278,46 @@ trial.addChild(screen);
 
 %% Custom Behaviors:
 % Define functions to handle some of the unique details of this task.
+function [name, data] = quest_initialize(list)
+
+
+
+function [name, data] = test1()
+disp('test1');
+
+
+
+function [name, data] = test2()
+disp('test2');
+
+
+function [name, data] = record_stim(list, trialStates)
+logic = list{'object'}{'logic'};
+stimInd = list{'graphics'}{'stimulus index'};
+drawables = list{'graphics'}{'drawables'};
+stim = drawables.getObject(stimInd);
+if (stim.isVisible == false)
+    trialStates.editStateByName('stimulus1', 'next', 'stimulus0');
+end
+
+%while(stim.tind < 30)
+%    disp(stim.tind);
+%    stim = drawables.getObject(stimInd);
+%end
+
+function [name, data] = turn_on_stim(list, trialStates)
+logic = list{'object'}{'logic'};
+stimInd = list{'graphics'}{'stimulus index'};
+drawables = list{'graphics'}{'drawables'};
+
+drawables.setObjectProperty('isVisible', true, [stimInd]);
+trialStates.editStateByName('stimulus1', 'next', 'stimulus1');
+
+%drawables.automateObjectMethod('draw', @mayDrawNow);
+
+name = NaN;
+data = NaN;
+
 
 function [name,data] = getNextEvent_Clean(dt, trialStates, list)
 flag = 1;
@@ -347,6 +403,8 @@ drawables.setObjectProperty( ...
 
 drawables.setObjectProperty( ...
     'duration', logic.duration, [stimInd]);
+%drawables.setObjectProperty(...
+%    'time_max',0,[stimInd]);
                 
 drawables.callObjectMethod(@prepareToDrawInWindow);
 
@@ -464,4 +522,5 @@ logic.computeBehaviorParameters();
 
 function editState(trialStates, list, logic)
 logic = list{'object'}{'logic'};
-trialStates.editStateByName('stimulus1', 'timeout', logic.duration);
+%trialStates.editStateByName('stimulus1', 'timeout', logic.duration * 2);
+trialStates.editStateByName('stimulus1', 'timeout', 0);

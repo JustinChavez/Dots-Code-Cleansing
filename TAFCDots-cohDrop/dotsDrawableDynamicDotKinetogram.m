@@ -92,7 +92,10 @@ classdef dotsDrawableDynamicDotKinetogram < dotsDrawableVertices
         time_start = [];
         time_end = [];
         
-        duration = 0;
+        time_max = nan;
+        
+        
+        duration = nan;
         time_progress = 0;
         coherence_max = 100;
         
@@ -148,6 +151,8 @@ classdef dotsDrawableDynamicDotKinetogram < dotsDrawableVertices
             if isnan(self.windowFrameRate)
                 screen = dotsTheScreen.theObject();
                 self.windowFrameRate = screen.windowFrameRate;
+                %justin time
+                self.time_max = self.windowFrameRate * self.duration;
                
             end
             
@@ -348,16 +353,22 @@ classdef dotsDrawableDynamicDotKinetogram < dotsDrawableVertices
                 self.time_start = clock;
                 self.time_end = [self.time_end 0];
                 self.time_flag = 1;
+                self.time_count = 0;
                 
                 %linear drop
                 self.coherence = self.coherence_max;
             end
-            self.time_end = etime(clock, self.time_start);
+            if(self.tind < self.time_max)
             
-            self.computeNextFrame;
-            mglStencilSelect(self.stencilNumber);
-            self.draw@dotsDrawableVertices;
-            mglStencilSelect(0);
+                self.time_end = etime(clock, self.time_start);
+            
+                self.computeNextFrame;
+                mglStencilSelect(self.stencilNumber);
+                self.draw@dotsDrawableVertices;
+                mglStencilSelect(0);
+            else
+                self.isVisible = false;
+            end
         end
     end
 end

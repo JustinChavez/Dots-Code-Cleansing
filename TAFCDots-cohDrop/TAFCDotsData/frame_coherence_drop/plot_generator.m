@@ -4,8 +4,8 @@
 
 %expectations: all files have the same structure counts (ex. same amount of
 %statusData per all_data)
-START = 129;
-END = 129;
+START = 145;
+END = 145;
 
 
 all_data = [];
@@ -27,6 +27,13 @@ for i=1:dim1
 end
 [~, sample_num] = size(all_tind);
 
+logic_time = [];
+for i=1:dim1
+    for j=1:dim2
+        logic_time = [logic_time all_data(i).statusData(j).trial_time_end];
+    end
+end
+
 %% PLOTS - Uncomment later
 %variations of frames actually generated
 figure()
@@ -40,8 +47,13 @@ figure()
 %subplot(3,1,2)
 histogram(all_time, sample_num)
 title('Trial length is Skewed to take longer than set')
-xlabel('Count of trials')
-ylabel('Length of trial')
+xlabel('Length of trials')
+ylabel('Count of trial')
+
+figure()
+histogram(logic_time, sample_num)
+title('logic timing')
+
 
 %35 point skew figure
 %figure()

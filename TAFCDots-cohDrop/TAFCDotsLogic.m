@@ -197,8 +197,11 @@ classdef TAFCDotsLogic < handle
         % Compute behavioral parameters for the current prediction.
         function computeBehaviorParameters(self)
             if self.choice ~= 0
-                self.ReactionTimeData = [self.ReactionTimeData self.reactionTime];
-                self.PercentCorrData = [self.PercentCorrData self.correct];
+                %Justin Edit - Prevent accumulation of data.
+                %self.ReactionTimeData = [self.ReactionTimeData self.reactionTime];
+                %self.PercentCorrData = [self.PercentCorrData self.correct];
+                self.ReactionTimeData = [self.reactionTime];
+                self.PercentCorrData = [self.correct];
                 %self.score = (mean(self.PercentCorrData))./(mean(self.ReactionTimeData));
             end
         end
