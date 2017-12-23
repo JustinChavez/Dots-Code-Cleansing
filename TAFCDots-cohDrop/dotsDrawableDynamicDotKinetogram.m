@@ -92,9 +92,16 @@ classdef dotsDrawableDynamicDotKinetogram < dotsDrawableVertices
         time_start = [];
         time_end = [];
         
-        duration = 0;
+        time_max = nan;
+        
+        
+        duration = nan;
         time_progress = 0;
-        coherence_max = 100;
+        coh_high = nan;
+        coh_low = nan;
+        length_of_drop = nan;
+        length_of_drop_inT = nan;
+
         
     end
     
@@ -148,14 +155,13 @@ classdef dotsDrawableDynamicDotKinetogram < dotsDrawableVertices
             if isnan(self.windowFrameRate)
                 screen = dotsTheScreen.theObject();
                 self.windowFrameRate = screen.windowFrameRate;
-               
+                self.time_max = ceil(self.windowFrameRate * self.duration);
+                self.length_of_drop_inT = ceil(self.windowFrameRate * self.length_of_drop);
             end
-            
-            
             
             % gross accounting for the underlying dot field
             fieldWidth = self.diameter*self.fieldScale;
-            self.nDots = ceil(self.density * fieldWidth^2 ...
+            self.nDots = floor(self.density * fieldWidth^2 ...
                 / self.windowFrameRate);
             self.frameSelector = false(1, self.nDots);
             self.dotLifetimes = zeros(1, self.nDots);
@@ -205,8 +211,6 @@ classdef dotsDrawableDynamicDotKinetogram < dotsDrawableVertices
             
             self.stimOnset = mglGetSecs;
             
-            %linear drop Justin
-            self.coherence_max = self.coherence;
             
         end
         
@@ -220,12 +224,18 @@ classdef dotsDrawableDynamicDotKinetogram < dotsDrawableVertices
                 self.direction = mod(self.direction+180,360);
             end
             
-            self.time_progress = self.time_end / self.duration;
+            %linear drop
+            self.time_progress = (self.tind - 1) / self.length_of_drop_inT;
+            self.coherence = self.coh_high - (self.time_progress * (self.coh_high - self.coh_low));
             
-            %linear ramp
-            
-            self.coherence = (-100 * self.time_progress) + 100;
-            
+            %for Glaze 2015 
+%             if (rand < .25)
+%                 self.coherence = 80;
+%             else
+%                 self.coherence = 11;
+%             end
+%                 
+          
             self.directionvc(self.tind) = self.direction;
             self.stimtime(self.tind) = mglGetSecs;
             
@@ -344,20 +354,24 @@ classdef dotsDrawableDynamicDotKinetogram < dotsDrawableVertices
         
         % Draw the next frame of animated dots in a cirular aperture.
         function draw(self)
-            if self.time_flag == 0
-                self.time_start = clock;
-                self.time_end = [self.time_end 0];
-                self.time_flag = 1;
+            %if self.time_flag == 0
+            %    self.time_start = clock;
+            %    self.time_end = [self.time_end 0];
+            %    self.time_flag = 1;
+            %    self.time_count = 0;
                 
-                %linear drop
-                self.coherence = self.coherence_max;
-            end
-            self.time_end = etime(clock, self.time_start);
+            %end
+            if(self.tind < self.time_max)
             
-            self.computeNextFrame;
-            mglStencilSelect(self.stencilNumber);
-            self.draw@dotsDrawableVertices;
-            mglStencilSelect(0);
+            %    self.time_end = etime(clock, self.time_start);
+            
+                self.computeNextFrame;
+                mglStencilSelect(self.stencilNumber);
+                self.draw@dotsDrawableVertices;
+                mglStencilSelect(0);
+            else
+                self.isVisible = false;
+            end
         end
     end
 end

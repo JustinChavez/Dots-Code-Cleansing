@@ -1,6 +1,10 @@
 function [tree, list] = configureTAFCDotsDur(logic, isClient)
 % for the within trial change-point task
+
 sc=dotsTheScreen.theObject;
+%Adjust-1
+%0 - for window
+%1 - for full screen
 sc.reset('displayIndex', 0);
 
 if nargin < 1 || isempty(logic)
@@ -263,58 +267,49 @@ trial.addChild(screen);
 %% Custom Behaviors:
 % Define functions to handle some of the unique details of this task.
 
+%Records the choice of the user.
 function [name,data] = getNextEvent_Clean(dt, trialStates, list)
 flag = 1;
 logic = list{'object'}{'logic'};
-%start = clock;
-%timeout = logic.decisiontime_max;
 logic.choice = NaN;
-while flag %&& (etime(clock, start) < timeout)
+
+while flag
     key_entered = mglGetKeyEvent(dt);
+    %If decision times out this block is executed 
     if (isempty(key_entered))
         logic.choice=0;
         flag=0;
     elseif (strcmp(key_entered.charCode,'f'))
-        logic.choice = -1; % right
+        logic.choice = -1; % left
         flag = 0;
-        %Place data recording here
     elseif (strcmp(key_entered.charCode,'j'))
-        logic.choice = +1; % left
+        logic.choice = +1; % right
         flag = 0;
-        %place data recording here
     end
 end
 
-%Justin TODO: Need to figure out what dependency necessitates these
+%TODO: Need to figure out what dependency necessitates these
 %existing
 name = NaN;
 data = NaN;
 list{'object'}{'logic'} = logic;
-%Justin#4: Thought this was actually doing something. Turns out it has no
-%effect on timeout, function return does
-%trialStates.editStateByName('decision','timeout',0);
+
 
 function configStartTrial(list)
 % start Logic trial
 logic = list{'object'}{'logic'};
 logic.startTrial;
-
-% clear data from the last trial
-%ui = list{'input'}{'controller'};
-%ui.flushData();
 list{'control'}{'current choice'} = 'none';
 
 % reset the appearance of targets and cursor
-%   use the drawables ensemble, to allow remote behavior
+% use the drawables ensemble, to allow remote behavior
 drawables = list{'graphics'}{'drawables'};
 targsInd = list{'graphics'}{'targets index'};
 stimInd = list{'graphics'}{'stimulus index'};
 drawables.setObjectProperty( ...
     'colors', list{'graphics'}{'gray'}, [targsInd]);
 
-% randval = rand;
-% randval = 0;
-
+%initial direction of dots is randomized
 logic.direction0 = round(rand)*180;
 
 % let all the graphics set up to draw in the open window
@@ -386,8 +381,6 @@ drawables = list{'graphics'}{'drawables'};
 fpInd = list{'graphics'}{'fixation point index'};
 targsInd = list{'graphics'}{'targets index'};
 stimInd = list{'graphics'}{'stimulus index'};
-counterInd = list{'graphics'}{'counter index'};
-scoreInd = list{'graphics'}{'score index'};
 logic.setDetection();
 drawables.setObjectProperty('isVisible', false, [fpInd]);
 drawables.setObjectProperty('isVisible', true, [targsInd]);
@@ -399,23 +392,17 @@ elseif logic.choice == 1 %right choice
 end
  
 stim = drawables.getObject(stimInd);
-
-
 logic.directionvc = stim.directionvc(1:stim.tind);
 logic.coherencevc = stim.coherencevc(1:stim.tind);
- 
 stimstrct = obj2struct(stim);
-
 logic.stimstrct = stimstrct;
-disp('works?');
-disp(logic.choice);
 
 %Record accuracy of choice and change color of dot accordingly
-if logic.choice == -1 && stim.direction == 180
+if logic.choice == -1 && stim.direction == 180 %correct choice left
     drawables.setObjectProperty( ...
         'colors', list{'graphics'}{'green'}, targsInd);
      logic.correct = 1;
-elseif logic.choice == 1 && stim.direction == 0
+elseif logic.choice == 1 && stim.direction == 0 %correct choice right
      drawables.setObjectProperty( ...
          'colors', list{'graphics'}{'green'}, targsInd);
      logic.correct = 1;
@@ -426,28 +413,11 @@ elseif logic.choice == 0 %timeout
 else %wrong choice
      drawables.setObjectProperty( ...
          'colors', list{'graphics'}{'red'}, targsInd);
- logic.correct = 0;
+     logic.correct = 0;
 end
 
 %Computes and records logic.ReactionTimeData and logic.PercentCorrData
 logic.computeBehaviorParameters();
-
-%JUSTIN TODO: Score is calculated below. When should it be utilized?
-%if logic.correct == 1
-%     logic.score = logic.score + 0.1;
-%elseif logic.correct == 0
-%     logic.score = logic.score - 0.1;
-%     if logic.score < 0
-%         logic.score = 0;
-%     end
-% end
-%     
-% drawables = list{'graphics'}{'drawables'};
-% drawables.setObjectProperty('string', strcat(num2str(logic.blockTotalTrials + 1), '/',...
-% num2str(logic.trialsPerBlock)), counterInd);
-% drawables.setObjectProperty('string', strcat('$', num2str(logic.score)), scoreInd);
-
-
 
 function editState(trialStates, list, logic)
 logic = list{'object'}{'logic'};

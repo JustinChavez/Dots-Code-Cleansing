@@ -140,6 +140,25 @@ list{'graphics'}{'stimulus index'} = stimInd;
 list{'graphics'}{'counter index'} = counterInd;
 list{'graphics'}{'score index'} = scoreInd;
 list{'graphics'}{'screen'} = screen;
+%% cohDrop initialization
+
+ch_values = load('scriptRunValues/ch_values.mat');
+coh_high = ch_values.coh_high;
+coh_low = ch_values.coh_low;
+length_of_drop = ch_values.length_of_drop;
+minT = ch_values.minT;
+maxT = ch_values.maxT;
+H3 = ch_values.H3;
+
+%Duration defined for every trial. Now placed in starttrial
+%logic.duration = duration;
+logic.minT = minT;
+logic.maxT = maxT;
+list{'object'}{'logic'} = logic;
+list{'graphics'}{'coh_high'} = coh_high;
+list{'graphics'}{'coh_low'} = coh_low;
+list{'graphics'}{'length_of_drop'} = length_of_drop;
+list{'graphics'}{'H3'} = H3;
 
 %% Outline the structure of the experiment with topsRunnable objects
 %   visualize the structure with tree.gui()
@@ -173,21 +192,22 @@ trialCalls = topsCallList('call functions');
 list{'control'}{'trial calls'} = trialCalls;
 
 % "instructions" is a branch of the tree with an instructional slide show
-instructions = topsTreeNode('instructions');
-instructions.iterations = 1;
-tree.addChild(instructions);
 
-viewSlides = topsConcurrentComposite('slide show');
+%instructions = topsTreeNode('instructions');
+%instructions.iterations = 1;
+%tree.addChild(instructions);
+
+%viewSlides = topsConcurrentComposite('slide show');
 %viewSlides.startFevalable = {@flushData, ui};
 %viewSlides.finishFevalable = {@flushData, ui};
-instructions.addChild(viewSlides);
+%instructions.addChild(viewSlides);
 
-instructionStates = topsStateMachine('instruction states');
-viewSlides.addChild(instructionStates);
+%instructionStates = topsStateMachine('instruction states');
+%viewSlides.addChild(instructionStates);
 
-instructionCalls = topsCallList('instruction updates');
-instructionCalls.alwaysRunning = true;
-viewSlides.addChild(instructionCalls);
+%instructionCalls = topsCallList('instruction updates');
+%instructionCalls.alwaysRunning = true;
+%viewSlides.addChild(instructionCalls);
 
 list{'outline'}{'tree'} = tree;
 %% Control:
@@ -202,16 +222,18 @@ list{'outline'}{'tree'} = tree;
 
 %% Organize the presentation of instructions
 % the instructions state machine will respond to user input commands
-% states = { ...
-%     'name'      'next'      'timeout'	'entry'     'input'; ...
-%     'showSlide' ''          logic.decisiontime_max    {}          {@getNextEvent ui}; ...
-%      'rightFine' 'showSlide' 0           {}	{}; ...
-%      'leftFine'  'showSlide' 0           {} {}; ...
-%     'commit'     ''          0           {}          {}; ...
-%     };
-% instructionStates.addMultipleStates(states);
-% instructionStates.startFevalable = {@doMessage, list, ''};
-% instructionStates.finishFevalable = {@doMessage, list, ''};
+%states = { ...
+%    'name'      'entry'         'timeout'	'exit'          'next'      'input'; ...
+%    'quest_initialize' {@quest_initialize}              0           {}    'start1'  {};...
+%    'start1'    {@test1}              0           {}    'next1'  {};...
+%    'next1'    {@test2}              0           {}    'end1'  {};...
+%    'end1'    {}              0           {}    ''  {};...
+%    };
+%instructionStates.addMultipleStates(states);
+%instructionStates.startFevalable = {@doMessage, list, ''};
+%instructionStates.finishFevalable = {@doMessage, list, ''};
+%instructionStates.startFevalable = {@configStartTrial, list};
+%instructionStates.finishFevalable = {@configFinishTrial, list};
 % 
 % % the instructions call list runs in parallel with the state machine
 % instructionCalls.addCall({@read, ui}, 'input');
@@ -230,25 +252,34 @@ chf = @(index)drawables.setObjectProperty('colors', [0.45 0.45 0.45], index);
 fixedStates = { ...
     'name'      'entry'         'timeout'	'exit'          'next'      'input'; ...
 %    'inst'      {@doNextInstruction, av} 1        {}              ''; ...
-    'prepare1'   {on fpInd}          0       {on, [counterInd, scoreInd]}                  'pause'     {}; ...
+    'prepare2'   {}          0       {}  'prepare1' {}; ...
+    'prepare1'   {on fpInd}          0       {on, [counterInd, scoreInd]}  'pause'     {}; ...
     %'pause'     {chf fpInd} 0       {@run instructions}                  'pause2'   {};...
     'pause'     {chf fpInd} 0       {}                  'pause2'   {};...
     'pause2'    {cho fpInd}              0           {}    'prepare2'  {};...
     'prepare2'   {on qpInd}      0       {}      'change-time' {}; ...
-    'change-time'      {@editState, trialStates, list, logic}   0    {}    'stimulus1'     {}; ...
-    'stimulus1'  {on stimInd}   0       {} 'stimulus0' {}; ...
+    'change-time'      {@editState, trialStates, list, logic}   0    {}    'stimulus3'     {}; ...
+    %'stimulus1'  {on stimInd}   0       {} 'stimulus0' {}; ...
+    %undo for trial comparisons 2017/8/9
+    'stimulus3'  {}   0       {} 'stimulus1' {@turn_on_stim list trialStates}; ...
+    %'stimulus3'  {on stimInd}   0       {} 'stimulus1' {}; ...
+    %undo for trial comparisons 2017/8/9
+    'stimulus1'  {@record_stim list trialStates}   1       {} 'stimulus1' {}; ...
+    %'stimulus1'  {}   1       {off stimInd} 'stimulus0' {}; ...
 %    'stimulus2'  {@changeDirection, list} 0     {}	'change-time' {}; ...
     'stimulus0'  {}   0    {@setTimeStamp, logic}             'decision'     {}; ...
    % 'stimulus0'  {}   0    {@setTimeStamp, logic}             'decision'     {}; ... 
-    'decision'  {off stimInd}   0  {}  'moved'  {@getNextEvent_Clean logic.decisiontime_max trialStates list}; ...
+    %'decision'  {off stimInd}   0  {}  'moved'  {@getNextEvent_Clean logic.decisiontime_max trialStates list}; ...
+    'decision'  {}   0  {}  'moved'  {@getNextEvent_Clean logic.decisiontime_max trialStates list}; ...
     'moved'    {}         0     {@showFeedback, list} 'choice' {}; ...
     'choice'    {}	tFeed     {}              'complete' {}; ...
-    'complete'  {}  0   {}              'counter'          {}; ... % always a good trial for now
+    %'complete'  {@quest_set list trialStates}  0   {}       'counter'          {}; ... % always a good trial for now
+    'complete'  {}  0   {}       'counter'          {}; ...
+    %undo quest above
     'counter'  {on, [counterInd, scoreInd]}  0   {}              'set'          {}; ... % always a good trial for now
     'set'  {@setGoodTrial, logic}  0   {}              ''          {}; ...
     'exit'     {@closeTree,tree}          0           {}          ''  {}; ...
     };
-
 
 trialStates.addMultipleStates(fixedStates);
 trialStates.startFevalable = {@configStartTrial, list};
@@ -263,6 +294,35 @@ trial.addChild(screen);
 %% Custom Behaviors:
 % Define functions to handle some of the unique details of this task.
 
+function [name, data] = record_stim(list, trialStates)
+logic = list{'object'}{'logic'};
+stimInd = list{'graphics'}{'stimulus index'};
+drawables = list{'graphics'}{'drawables'};
+stim = drawables.getObject(stimInd);
+if (stim.isVisible == false)
+    trialStates.editStateByName('stimulus1', 'next', 'stimulus0');
+end
+
+%while(stim.tind < 30)
+%    disp(stim.tind);
+%    stim = drawables.getObject(stimInd);
+%end
+%setup
+function [name, data] = turn_on_stim(list, trialStates)
+logic = list{'object'}{'logic'};
+stimInd = list{'graphics'}{'stimulus index'};
+drawables = list{'graphics'}{'drawables'};
+
+drawables.setObjectProperty('isVisible', true, [stimInd]);
+%undo
+trialStates.editStateByName('stimulus1', 'next', 'stimulus1');
+
+%drawables.automateObjectMethod('draw', @mayDrawNow);
+
+name = NaN;
+data = NaN;
+
+
 function [name,data] = getNextEvent_Clean(dt, trialStates, list)
 flag = 1;
 logic = list{'object'}{'logic'};
@@ -270,22 +330,22 @@ logic = list{'object'}{'logic'};
 %timeout = logic.decisiontime_max;
 logic.choice = NaN;
 
-%  while flag %&& (etime(clock, start) < timeout)
-%      key_entered = mglGetKeyEvent(dt);
-%      if (isempty(key_entered))
-%          logic.choice=0;
-%          flag=0;
-%      elseif (strcmp(key_entered.charCode,'f'))
-%          logic.choice = -1; % right
-%          flag = 0;
-%          %Place data recording here
-%      elseif (strcmp(key_entered.charCode,'j'))
-%          logic.choice = +1; % left
-%          flag = 0;
-%          %place data recording here
-%      end
-%  end
-logic.choice = +1;
+ while flag %&& (etime(clock, start) < timeout)
+     key_entered = mglGetKeyEvent(dt);
+     if (isempty(key_entered))
+         logic.choice=0;
+         flag=0;
+     elseif (strcmp(key_entered.charCode,'f'))
+         logic.choice = -1; % right
+         flag = 0;
+         %Place data recording here
+     elseif (strcmp(key_entered.charCode,'j'))
+         logic.choice = +1; % left
+         flag = 0;
+         %place data recording here
+     end
+ end
+%logic.choice = +1;
 
 
 
@@ -297,7 +357,7 @@ list{'object'}{'logic'} = logic;
 %Justin#4: Thought this was actually doing something. Turns out it has no
 %effect on timeout, function return does
 %trialStates.editStateByName('decision','timeout',0);
-
+%setup
 function configStartTrial(list)
 % start Logic trial
 logic = list{'object'}{'logic'};
@@ -313,19 +373,35 @@ list{'control'}{'current choice'} = 'none';
 drawables = list{'graphics'}{'drawables'};
 targsInd = list{'graphics'}{'targets index'};
 stimInd = list{'graphics'}{'stimulus index'};
+coh_high = list{'graphics'}{'coh_high'};
+coh_low = list{'graphics'}{'coh_low'};
+length_of_drop = list{'graphics'}{'length_of_drop'};
+H3 = list{'graphics'}{'H3'};
+minT = logic.minT;
+maxT = logic.maxT; 
+
 drawables.setObjectProperty( ...
     'colors', list{'graphics'}{'gray'}, [targsInd]);
 
-% randval = rand;
-% randval = 0;
+%define the duration for this trial
+
+duration = min(minT + exprnd(1/H3),maxT);
+while (duration == maxT)
+    duration = min(minT + exprnd(1/H3),maxT);
+end
+duration = duration + length_of_drop;
+logic.duration = duration;
 
 logic.direction0 = round(rand)*180;
 
 % let all the graphics set up to draw in the open window
 drawables.setObjectProperty('isVisible', false);
-                
-%drawables.setObjectProperty( ...
-%    'tind', 0, [stimInd]);
+
+drawables.setObjectProperty( ...
+    'length_of_drop', length_of_drop, [stimInd]);
+
+drawables.setObjectProperty( ...
+    'duration', duration, [stimInd]);
 
 drawables.setObjectProperty( ...
     'coherence', logic.coherence, [stimInd]);
@@ -346,9 +422,19 @@ drawables.setObjectProperty( ...
     'tind', 0, [stimInd]);
 
 drawables.setObjectProperty( ...
-    'duration', logic.duration, [stimInd]);
+    'coh_high', coh_high, [stimInd]);
+
+drawables.setObjectProperty( ...
+    'coh_low', coh_low, [stimInd]);
+
+
+
+
+%drawables.setObjectProperty(...
+%    'time_max',0,[stimInd]);
                 
 drawables.callObjectMethod(@prepareToDrawInWindow);
+
 
 function configFinishTrial(list)
 % finish logic trial
@@ -413,10 +499,9 @@ end
  
 stim = drawables.getObject(stimInd);
 
-
 logic.directionvc = stim.directionvc(1:stim.tind);
 logic.coherencevc = stim.coherencevc(1:stim.tind);
- 
+
 stimstrct = obj2struct(stim);
 
 logic.stimstrct = stimstrct;
@@ -464,4 +549,51 @@ logic.computeBehaviorParameters();
 
 function editState(trialStates, list, logic)
 logic = list{'object'}{'logic'};
-trialStates.editStateByName('stimulus1', 'timeout', logic.duration);
+%trialStates.editStateByName('stimulus1', 'timeout', logic.duration * 2);
+%undo for trial comparisons 2017/8/9
+trialStates.editStateByName('stimulus1', 'timeout', 0);
+
+%set coherence to level specified by quest, will remove once quest trials
+%are finished in the next funciton
+function quest_set(list, trialStates)
+
+q = list{'quest'}{'object'};
+logic = list{'object'}{'logic'};
+
+%Kira code to stop Quest
+logic.oldcoherence=[logic.oldcoherence, logic.coherence];
+avgCoh = mean(logic.oldcoherence);
+if logic.coherence<=.5+avgCoh && logic.coherence>=avgCoh-.5
+    logic.timessame=logic.timessame+1;
+    logic.perrcorr=mean(logic.PercentCorrData);
+else
+    logic.timessame=0; 
+    logic.perrcorrList=[];
+    logic.oldcoherence=[];
+end
+
+
+q=QuestUpdate(q,logic.coherence,logic.correct);
+coh = max(QuestQuantile(q),3);
+if coh>100
+    coh=100;
+end
+logic.coherence = coh;
+list{'quest'}{'object'} = q;
+list{'object'}{'logic'} = logic;
+
+if logic.timessame>=20 && logic.perrcorr<.70 && logic.perrcorr>.60
+    tree=list{'outline'}{'tree'};
+    session= list{'outline'}{'session'}; 
+    block= list{'outline'}{'block'};
+    block.finish;
+    session.finsih;
+    tree.finish;
+end
+
+
+
+
+
+%logic sets coherence when state machine begins each trial, thus only
+%change logic.coherence at the end of the trial to show an effect here
