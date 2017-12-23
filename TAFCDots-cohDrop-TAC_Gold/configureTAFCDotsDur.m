@@ -1,7 +1,7 @@
 function [tree, list] = configureTAFCDotsDur(logic, isClient)
 % for the within trial change-point task
 sc=dotsTheScreen.theObject;
-sc.reset('displayIndex', 1);
+sc.reset('displayIndex', 0);
 
 if nargin < 1 || isempty(logic)
     logic = TAFCDotsLogic();
@@ -153,6 +153,7 @@ H3 = ch_values.H3;
 cp_maxT = ch_values.cp_maxT;
 cp_minT = ch_values.cp_minT;
 cp_H3 = ch_values.cp_H3;
+TAC_on = ch_values.TAC_on;
 
 %Duration defined for every trial. Now placed in starttrial
 %logic.duration = duration;
@@ -167,6 +168,7 @@ list{'graphics'}{'H3'} = H3;
 list{'graphics'}{'cp_maxT'} = cp_maxT;
 list{'graphics'}{'cp_minT'} = cp_minT;
 list{'graphics'}{'cp_H3'} = cp_H3;
+list{'graphics'}{'TAC_on'} = TAC_on;
 
 %% Set Trial TAC
 %currently hardcoded the amount of TAC. Should place control over this in
@@ -431,17 +433,20 @@ if (rand < .25)
     is_high_trial_G = 1;
 end
 
-%50 chance of no mandatory changepoint
-if (rand < .5)
-    TAC = min(cp_minT + exprnd(cp_H3),cp_maxT);
-    while (TAC == cp_maxT)
+TAC_on = list{'graphics'}{'TAC_on'};
+if TAC_on
+    %50 chance of no mandatory changepoint
+    if (rand < .5)
         TAC = min(cp_minT + exprnd(cp_H3),cp_maxT);
+        while (TAC == cp_maxT)
+            TAC = min(cp_minT + exprnd(cp_H3),cp_maxT);
+        end
+    else
+        TAC = 0;
     end
 else
+    %remove set Trial change points
     TAC = 0;
-end
-%remove set Trial change points
-%TAC = 0;
 
 %computed in prepareDotsDrawable
 %logic.direction0 = round(rand)*180;
